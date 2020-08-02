@@ -9,12 +9,14 @@ const process = require('./nodemon.json')
 const mongoUrl = `mongodb+srv://node-rest-shop:${process.env.MONGO_ATLAS_PW}@node-rest-shop.erlnq.mongodb.net/node-rest-shop?retryWrites=true&w=majority`;
 
 const productRoutes = require('./api/routes/products')
-const orderRoutes = require('./api/routes/order')
+const orderRoutes = require('./api/routes/orders')
 
 mongoose.connect(mongoUrl,{
     useNewUrlParser: true, 
     useUnifiedTopology: true
 })
+
+mongoose.Promise = global.Promise;
 // 0: disconnected
 // 1: connected
 // 2: connecting
