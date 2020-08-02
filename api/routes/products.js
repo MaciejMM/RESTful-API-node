@@ -1,23 +1,52 @@
 const express = require('express');
 const router = express.Router();
-const Product = require('../models/product');
 const mongoose = require('mongoose');
+
+const Product = require('../models/product');
+const multer = require('multer');
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, './uploads/');
+    },
+    filename: (req, file, cb) => {
+        cb(null, Date.now() + "_" + file.originalname)
+    }
+})
+const fileFilter = (req, file, cb) => {
+    // reject file 
+    if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png'|| file.mimetype === 'image/jpg') {
+        cb(null, true)
+    } else {
+        cb(null, false);
+    }
+
+}
+
+
+const upload = multer({
+    storage: storage,
+    limits: {
+        fileSize: 1024 * 1024 * 5
+    },
+    fileFilter: fileFilter
+});
 
 router.get('/', (req, res, next) => {
     Product.find()
-        .select('name price _id')//define fields which should be presented
+        .select('name price _id productImage')//define fields which should be presented
         .exec()
         .then(docs => {
             const response = {
                 count: docs.length,
-                products:docs.map(doc=>{
+                products: docs.map(doc => {
                     return {
-                        name:doc.name,
-                        price:doc.price,
-                        _id:doc._id,
-                        request:{
-                            type:'GET',
-                            url:'http://localhost:3000/products/'+ doc._id
+                        name: doc.name,
+                        price: doc.price,
+                        _id: doc._id,
+                        productImage: doc.productImage,
+                        request: {
+                            type: 'GET',
+                            url: 'http://localhost:3000/products/' + doc._id
                         }
                     }
                 })
@@ -36,12 +65,12 @@ router.get('/', (req, res, next) => {
 
 
 
-router.post('/', (req, res, next) => {
-
+router.post('/', upload.single('productImage'), (req, res, next) => {
     const product = new Product({
         _id: new mongoose.Types.ObjectId(),
         name: req.body.name,
-        price: req.body.price
+        price: req.body.price,
+        productImage: req.file.path
     });
     product
         .save()
@@ -50,12 +79,12 @@ router.post('/', (req, res, next) => {
             res.status(201).json({
                 message: 'Product successfully created',
                 createdProduct: {
-                    name:result.name,
-                    price:result.price,
-                    id:result._id,
-                    request:{
-                        type:'GET',
-                        url:'http://localhost:3000/products/'+ result._id
+                    name: result.name,
+                    price: result.price,
+                    id: result._id,
+                    request: {
+                        type: 'GET',
+                        url: 'http://localhost:3000/products/' + result._id
                     }
                 }
             })
@@ -78,7 +107,7 @@ router.post('/', (req, res, next) => {
 router.get('/:productId', (req, res, next) => {
     const id = req.params.productId;
     Product.findById(id)
-        .select('name price _id')//define fields which should be presented
+        .select('name price _id productImage')//define fields which should be presented
 
         .exec()
         .then(doc => {
@@ -86,10 +115,10 @@ router.get('/:productId', (req, res, next) => {
 
             if (doc) {
                 res.status(200).json({
-                    product:doc,
-                    request:{
-                        type:'GET',
-                        url:'http://localhost:3000/products'
+                    product: doc,
+                    request: {
+                        type: 'GET',
+                        url: 'http://localhost:3000/products'
                     }
                 })
 
@@ -115,22 +144,22 @@ router.get('/:productId', (req, res, next) => {
 router.patch('/:productId', (req, res, next) => {
     const id = req.params.productId;
     const updateOps = {};
-    for (const ops of req.body){
+    for (const ops of req.body) {
         updateOps[ops.propName] = ops.value;
     }
 
 
-    Product.update({_id: id}, {$set:updateOps})
+    Product.update({ _id: id }, { $set: updateOps })
         .exec()
         .then(result => {
             // console.log(result)
             res.status(200).json({
-                message:'Product updated',
-                request:{
-                    type:'GET',
-                    url:'http://localhost:3000/products/'+ id
+                message: 'Product updated',
+                request: {
+                    type: 'GET',
+                    url: 'http://localhost:3000/products/' + id
                 }
-            }) 
+            })
         })
         .catch(err => {
             console.log(err);
@@ -144,23 +173,23 @@ router.delete('/:productId', (req, res, next) => {
     const id = req.params.productId;
     Product.remove({ _id: id })
         .exec()
-        .then(results=>{
+        .then(results => {
             res.status(200).json({
-                message:'Product deleted',
-                request:{
-                    type:'POST',
-                    url:'http://localhost:3000/products',
-                    body:{
-                        name:"String",
-                        price:"Number"
+                message: 'Product deleted',
+                request: {
+                    type: 'POST',
+                    url: 'http://localhost:3000/products',
+                    body: {
+                        name: "String",
+                        price: "Number"
                     }
                 }
             })
         })
-        .catch(err=>{
+        .catch(err => {
             console.log(err);
             res.status(500).json({
-                error:err
+                error: err
             })
         });
 

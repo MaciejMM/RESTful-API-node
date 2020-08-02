@@ -4,11 +4,11 @@ const mongoose = require('mongoose');
 const Order = require('../models/order');
 const { request } = require('../../app');
 const Product = require('../models/product');
-const product = require('../models/product');
 
 router.get('/', (req, res, next) => {
     Order.find()
         .select('_id product quantity')
+        .populate('product','name')
         .exec()
         .then(docs => {
             res.status(200).json({
@@ -19,8 +19,8 @@ router.get('/', (req, res, next) => {
                         product: doc.product,
                         quantity: doc.quantity,
                         request: {
-                            type: "GET",
-                            url: "http://localhost:3000/orders/" + doc._id
+                            type: 'GET',
+                            url: 'http://localhost:3000/orders/' + doc._id
                         }
 
 
@@ -66,8 +66,8 @@ router.post('/', (req, res, next) => {
                     quantity:result.quantity
                 },
                 request: {
-                    type: "GET",
-                    url: "http://localhost:3000/orders/" + result._id
+                    type: 'GET',
+                    url: 'http://localhost:3000/orders/' + result._id
                 }
             })
 
@@ -82,6 +82,7 @@ router.post('/', (req, res, next) => {
 
 router.get('/:orderId', (req, res, next) => {
     Order.findById(req.params.orderId)
+        .populate('product',"_id name price")
         .exec()
         .then(order=>{
             if(!order){
@@ -94,7 +95,7 @@ router.get('/:orderId', (req, res, next) => {
                 order:order,
                 request:{
                     type:'GET',
-                    url:"http://localhost:3000/orders"
+                    url:'http://localhost:3000/orders'
                 }
             });
         })
@@ -119,9 +120,9 @@ router.delete('/:orderId', (req, res, next) => {
                 message:'Order was deleted',
                 request:{
                     type:'POST',
-                    url:"http://localhost:3000/orders",
+                    url:'http://localhost:3000/orders',
                     body:{
-                        productId:"id",quantity:"Number"
+                        productId:'id',quantity:'Number'
                     }
                 }
             });
